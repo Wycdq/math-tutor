@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数学智能助教 · MathMind Pro</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --primary: #4f46e5; --primary-dark: #4338ca; --primary-light: #eef2ff;
+    --accent: #06b6d4; --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+    --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --muted: #64748b;
+    --border: #e2e8f0; --shadow: 0 4px 6px -1px rgba(0,0,0,.08);
+  }
+  body { font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+  header { background: linear-gradient(135deg, var(--primary), #7c3aed); color: #fff; padding: 18px 24px; box-shadow: var(--shadow); position: sticky; top: 0; z-index: 100; }
+  header h1 { font-size: 22px; display: flex; align-items: center; gap: 10px; }
+  header .sub { font-size: 13px; opacity: .85; margin-top: 4px; }
+  .logo { width: 36px; height: 36px; background: rgba(255,255,255,.2); border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; }
+  .container { max-width: 1280px; margin: 0 auto; padding: 20px; display: grid; grid-template-columns: 260px 1fr; gap: 20px; }
+  .sidebar { background: var(--card); border-radius: 12px; padding: 16px; box-shadow: var(--shadow); height: fit-content; position: sticky; top: 100px; }
+  .sidebar h3 { font-size: 14px; color: var(--muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+  .nav-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; border: none; background: transparent; border-radius: 8px; cursor: pointer; font-size: 14px; color: var(--text); text-align: left; transition: .2s; margin-bottom: 4px; }
+  .nav-btn:hover { background: var(--primary-light); }
+  .nav-btn.active { background: var(--primary); color: #fff; }
+  .main { background: var(--card); border-radius: 12px; padding: 20px; box-shadow: var(--shadow); min-height: 600px; }
+  .tab { display: none; }
+  .tab.active { display: block; animation: fade .3s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  h2 { font-size: 20px; margin-bottom: 16px; color: var(--primary-dark); }
+  h3 { font-size: 16px; margin: 16px 0 8px; color: var(--primary-dark); }
+  p { line-height: 1.7; margin-bottom: 10px; color: #334155; }
+  /* Chat */
+  .chat-box { border: 1px solid var(--border); border-radius: 12px; height: 480px; overflow-y: auto; padding: 16px; background: #f1f5f9; margin-bottom: 12px; }
+  .msg { margin-bottom: 14px; display: flex; gap: 8px; }
+  .msg .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .msg.bot .avatar { background: var(--primary); color: #fff; }
+  .msg.user { flex-direction: row-reverse; }
+  .msg.user .avatar { background: var(--accent); color: #fff; }
+  .bubble { max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; }
+  .msg.bot .bubble { background: #fff; border: 1px solid var(--border); border-top-left-radius: 4px; }
+  .msg.user .bubble { background: var(--primary); color: #fff; border-top-right-radius: 4px; }
+  .bubble .step { background: #f8fafc; border-left: 3px solid var(--accent); padding: 6px 10px; margin: 6px 0; border-radius: 4px; font-family: "Cambria Math", "Times New Roman", serif; }
+  .bubble .formula { background: #eef2ff; padding: 3px 8px; border-radius: 4px; font-family: "Cambria Math", serif; font-style: italic; }
+  .bubble .result-box { background: linear-gradient(135deg,#ecfdf5,#fff); border:1px solid #a7f3d0; padding:8px 12px; border-radius:8px; margin:8px 0; font-weight:600; color:#065f46; }
+  .input-row { display: flex; gap: 8px; }
+  .input-row input { flex: 1; padding: 12px 14px; border: 2px solid var(--border); border-radius: 10px; font-size: 14px; outline: none; transition: .2s; }
+  .input-row input:focus { border-color: var(--primary); }
+  .btn { padding: 12px 20px; border: none; border-radius: 10px; background: var(--primary); color: #fff; font-size: 14px; cursor: pointer; transition: .2s; font-weight: 600; }
+  .btn:hover { background: var(--primary-dark); }
+  .btn.secondary { background: var(--border); color: var(--text); }
+  .btn.secondary:hover { background: #cbd5e1; }
+  .quick-questions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .quick-q { padding: 6px 12px; background: var(--primary-light); color: var(--primary); border-radius: 16px; font-size: 13px; cursor: pointer; border: none; transition: .2s; }
+  .quick-q:hover { background: var(--primary); color: #fff; }
+  /* Knowledge */
+  .topic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+  .topic-card { border: 1px solid var(--border); border-radius: 12px; padding: 16px; cursor: pointer; transition: .2s; background: #fff; }
+  .topic-card:hover { border-color: var(--primary); box-shadow: var(--shadow); transform: translateY(-2px); }
+  .topic-card .icon { font-size: 28px; margin-bottom: 8px; }
+  .topic-card h4 { font-size: 15px; margin-bottom: 4px; color: var(--primary-dark); }
+  .topic-card p { font-size: 12px; color: var(--muted); margin: 0; }
+  .knowledge-detail { margin-top: 20px; padding: 16px; background: var(--primary-light); border-radius: 10px; display: none; }
+  .knowledge-detail.show { display: block; animation: fade .3s; }
+  .formula-box { background: #fff; padding: 12px; border-radius: 8px; margin: 8px 0; font-family: "Cambria Math", serif; font-size: 15px; }
+  /* Practice */
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+  .toolbar select, .toolbar input { padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; outline: none; }
+  .quiz-card { border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .quiz-q { font-size: 15px; font-weight: 600; margin-bottom: 12px; }
+  .options { display: flex; flex-direction: column; gap: 8px; }
+  .option { padding: 10px 14px; border: 2px solid var(--border); border-radius: 8px; cursor: pointer; transition: .2s; font-size: 14px; }
+  .option:hover { border-color: var(--primary); }
+  .option.correct { border-color: var(--success); background: #d1fae5; }
+  .option.wrong { border-color: var(--danger); background: #fee2e2; }
+  .feedback { margin-top: 10px; padding: 10px; border-radius: 8px; font-size: 14px; display: none; }
+  .feedback.show { display: block; }
+  .feedback.correct { background: #d1fae5; color: #065f46; }
+  .feedback.wrong { background: #fee2e2; color: #991b1b; }
+  .score-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .score-bar .bar { flex: 1; height: 10px; background: var(--border); border-radius: 5px; overflow: hidden; }
+  .score-bar .fill { height: 100%; background: linear-gradient(90deg, var(--success), var(--accent)); width: 0%; transition: width .4s; }
+  .tab-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab-btn { padding: 8px 16px; border: 1px solid var(--border); background: #fff; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  /* Stat */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-top: 16px; }
+  .stat-card { background: linear-gradient(135deg, var(--primary-light), #fff); padding: 16px; border-radius: 12px; text-align: center; }
+  .stat-card .num { font-size: 28px; font-weight: 700; color: var(--primary-dark); }
+  .stat-card .label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .wrong-item { border:1px solid #fecaca; background:#fef2f2; padding:12px; border-radius:8px; margin-bottom:10px; }
+  .wrong-item .q { font-weight:600; margin-bottom:6px; }
+  footer { text-align: center; padding: 20px; color: var(--muted); font-size: 13px; }
+  @media (max-width: 768px) { .container { grid-template-columns: 1fr; } .sidebar { position: static; } }
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="logo">∑</span> 数学智能助教 MathMind Pro</h1>
+  <div class="sub">全栈数学求解 · 自然语言答疑 · 系统知识图谱 · 随机练习与错题本</div>
+</header>
+<div class="container">
+  <nav class="sidebar">
+    <h3>功能导航</h3>
+    <button class="nav-btn active" data-tab="chat">💬 智能答疑</button>
+    <button class="nav-btn" data-tab="knowledge">📚 知识点讲解</button>
+    <button class="nav-btn" data-tab="practice">✏️ 练习与批改</button>
+    <button class="nav-btn" data-tab="wrong">📕 错题本</button>
+    <button class="nav-btn" data-tab="stats">📊 学习分析</button>
+    <button class="nav-btn" data-tab="about">ℹ️ 关于助教</button>
+  </nav>
+  <main class="main">
+    <section id="chat" class="tab active">
+      <h2>智能答疑</h2>
+      <p>向我提问任何数学问题，我会自动识别题型并给出详细步骤解析。支持：四则运算、方程求根、求导、积分、矩阵、几何、概率、数论、三角、数列、极限等。</p>
+      <div class="quick-questions">
+        <button class="quick-q">解方程 x²-5x+6=0</button>
+        <button class="quick-q">求 sin(30°) + cos(60°)</button>
+        <button class="quick-q">矩阵 [[1,2],[3,4]] 的行列式</button>
+        <button class="quick-q">求 12 和 18 的最大公约数</button>
+        <button class="quick-q">求 y=x³+2x 的导数</button>
+        <button class="quick-q">求 ∫x²dx</button>
+        <button class="quick-q">组合数 C(5,3)</button>
+        <button class="quick-q">2,4,6,8,10 的平均数</button>
+        <button class="quick-q">解不等式 2x+3>7</button>
+        <button class="quick-q">80的15%是多少</button>
+        <button class="quick-q">计算 5! (5的阶乘)</button>
+        <button class="quick-q">100以内素数的和</button>
+        <button class="quick-q">97 是不是素数</button>
+        <button class="quick-q">什么是指数爆炸</button>
+        <button class="quick-q">素数是什么</button>
+        <button class="quick-q">圆面积 r=5</button>
+        <button class="quick-q">解方程组 x+y=5, x-y=1</button>
+      </div>
+      <div class="chat-box" id="chatBox"></div>
+      <div class="input-row">
+        <input id="userInput" placeholder="请输入数学问题，例如：求 ∫x²dx、解 2x+3=7、求 1-100 的和..." />
+        <button class="btn" id="sendBtn">发送</button>
+      </div>
+    </section>
+
+    <section id="knowledge" class="tab">
+      <h2>知识点讲解</h2>
+      <p>点击卡片查看详细讲解、公式与例题，覆盖代数、几何、微积分、概率统计、线性代数、数论、三角、数列等。</p>
+      <div class="topic-grid" id="topicGrid"></div>
+      <div class="knowledge-detail" id="knowledgeDetail"></div>
+    </section>
+
+    <section id="practice" class="tab">
+      <h2>练习与批改</h2>
+      <div class="toolbar">
+        <label>知识点：
+          <select id="catSel"><option value="all">全部</option></select>
+        </label>
+        <label>难度：
+          <select id="diffSel"><option value="all">全部</option><option value="简单">简单</option><option value="中等">中等</option><option value="困难">困难</option></select>
+        </label>
+        <label>题数：
+          <select id="numSel"><option value="5">5</option><option value="10" selected>10</option><option value="15">15</option><option value="20">20</option></select>
+        </label>
+        <button class="btn" id="newQuiz">🎲 随机出题</button>
+      </div>
+      <div class="score-bar">
+        <span>本轮得分：<strong id="scoreNum">0</strong> / <span id="totalNum">0</span></span>
+        <div class="bar"><div class="fill" id="scoreFill"></div></div>
+        <span id="rateText" style="font-size:13px;color:var(--muted);">正确率 0%</span>
+      </div>
+      <div id="quizArea"></div>
+    </section>
+
+    <section id="wrong" class="tab">
+      <h2>错题本</h2>
+      <p>系统自动收录你答错的题目，方便复习巩固。</p>
+      <div id="wrongArea"></div>
+    </section>
+
+    <section id="stats" class="tab">
+      <h2>学习数据分析</h2>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num" id="sAsk">0</div><div class="label">累计提问</div></div>
+        <div class="stat-card"><div class="num" id="sCorrect">0</div><div class="label">练习正确数</div></div>
+        <div class="stat-card"><div class="num" id="sTotal">0</div><div class="label">练习总数</div></div>
+        <div class="stat-card"><div class="num" id="sRate">0%</div><div class="label">正确率</div></div>
+        <div class="stat-card"><div class="num" id="sWrong">0</div><div class="label">错题数</div></div>
+      </div>
+      <div id="advice" style="margin-top:20px; padding:16px; background:#fffbeb; border-left:4px solid var(--warning); border-radius:8px;"></div>
+    </section>
+
+    <section id="about" class="tab">
+      <h2>关于 MathMind Pro</h2>
+      <p><strong>定位：</strong>面向数学课程的全栈智能助教，融合符号计算引擎、知识库与随机题库，提供 7×24 小时答疑、系统讲解、随机练习与错题诊断。</p>
+      <p><strong>智能答疑能力：</strong></p>
+      <ul style="margin-left:20px; line-height:2;">
+        <li>算术与表达式求值（含三角函数、对数、阶乘等）</li>
+        <li>一元一次/二次/三次方程求根</li>
+        <li>二元一次方程组求解</li>
+        <li>多项式符号求导</li>
+        <li>基本不定积分</li>
+        <li>矩阵行列式、转置、乘法</li>
+        <li>数论：GCD、LCM、质因数分解、素数判断</li>
+        <li>几何：周长、面积、体积、距离</li>
+        <li>概率：古典概型、加法公式</li>
+        <li>数列：等差、等比求和</li>
+      </ul>
+    </section>
+  </main>
+</div>
+<footer>MathMind Pro 数学智能助教 · 全栈数学求解引擎 · 2026</footer>
+
+<script>
+/* ========== 导航 ========== */
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ========== 数据存储 ========== */
+const stats = { askCount: 0, correct: 0, total: 0 };
+let wrongList = JSON.parse(localStorage.getItem('mathmind_wrong') || '[]');
+function save() {
+  try { localStorage.setItem('mathmind_stats', JSON.stringify(stats)); localStorage.setItem('mathmind_wrong', JSON.stringify(wrongList)); } catch(e){}
+}
+function load() {
+  try { Object.assign(stats, JSON.parse(localStorage.getItem('mathmind_stats') || '{}')); } catch(e){}
+  updateStats();
+}
+function updateStats() {
+  document.getElementById('sAsk').textContent = stats.askCount;
+  document.getElementById('sCorrect').textContent = stats.correct;
+  document.getElementById('sTotal').textContent = stats.total;
+  const rate = stats.total ? Math.round(stats.correct / stats.total * 100) : 0;
+  document.getElementById('sRate').textContent = rate + '%';
+  document.getElementById('sWrong').textContent = wrongList.length;
+  const advice = document.getElementById('advice');
+  if (stats.total === 0) advice.innerHTML = '💡 还没有练习记录，去"练习与批改"开始吧！';
+  else if (rate >= 85) advice.innerHTML = '🎉 表现优秀！可尝试更高难度题目或综合性应用题。';
+  else if (rate >= 60) advice.innerHTML = '👍 基础不错，建议回顾错题本，加强薄弱知识点。';
+  else advice.innerHTML = '📖 建议先到"知识点讲解"复习，再做练习巩固。';
+}
+load();
+
+/* ========== 数学引擎 ========== */
+const MathEngine = (() => {
+  const PI = Math.PI, E = Math.E;
+
+  // ==== 表达式求值 (shunting-yard) ====
+  function tokenize(expr) {
+    expr = expr.replace(/\s+/g, '').replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-');
+    const tokens = [];
+    let i = 0;
+    while (i < expr.length) {
+      const c = expr[i];
+      if (/[0-9.]/.test(c)) {
+        let num = '';
+        while (i < expr.length && /[0-9.]/.test(expr[i])) num += expr[i++];
+        tokens.push({type:'num', val: parseFloat(num)});
+      } else if (/[a-zA-Zπe]/.test(c)) {
+        let name = '';
+        while (i < expr.length && /[a-zA-Zπe]/.test(expr[i])) name += expr[i++];
+        if (name === 'π' || name === 'pi') tokens.push({type:'num', val: PI});
+        else if (name === 'e' && expr[i] !== 'x' && expr[i] !== 'p') tokens.push({type:'num', val: E});
+        else if (name === 'x') tokens.push({type:'var', name:'x'});
+        else tokens.push({type:'func', name: name.toLowerCase()});
+      } else if ('+-*/^(),!'.includes(c)) {
+        tokens.push({type:'op', val: c});
+        i++;
+      } else { i++; }
+    }
+    return tokens;
+  }
+
+  const prec = {'+':1,'-':1,'*':2,'/':2,'^':4,'u-':5,'!':6};
+  const rightAssoc = {'^':true,'u-':true};
+
+  function toRPN(tokens) {
+    const out = [], ops = [];
+    let prev = null;
+    for (const t of tokens) {
+      if (t.type === 'num' || t.type === 'var') { out.push(t); }
+      else if (t.type === 'func') { ops.push(t); }
+      else if (t.type === 'op') {
+        let v = t.val;
+        if (v === '-' && (prev === null || (prev.type === 'op' && prev.val !== ')' && prev.val !== '!'))) v = 'u-';
+        if (v === '!') { out.push(t); }
+        else {
+          while (ops.length) {
+            const top = ops[ops.length-1];
+            const topV = top.type === 'func' ? 'func' : top.val;
+            const topP = topV === 'func' ? 7 : prec[topV];
+            if (topP > prec[v] || (topP === prec[v] && !rightAssoc[v])) out.push(ops.pop());
+            else break;
+          }
+          ops.push({type:'op', val: v});
+        }
+      } else if (t.val === '(') ops.push(t);
+      else if (t.val === ')') {
+        while (ops.length && ops[ops.length-1].val !== '(') out.push(ops.pop());
+        ops.pop();
+        if (ops.length && ops[ops.length-1].type === 'func') out.push(ops.pop());
+      }
+      prev = t;
+    }
+    while (ops.length) out.push(ops.pop());
+    return out;
+  }
+
+  const funcs = {
+    sin: Math.sin, cos: Math.cos, tan: Math.tan,
+    asin: Math.asin, acos: Math.acos, atan: Math.atan,
+    sinh: Math.sinh, cosh: Math.cosh, tanh: Math.tanh,
+    sqrt: Math.sqrt, cbrt: Math.cbrt, abs: Math.abs,
+    ln: Math.log, log: Math.log10, log2: Math.log2,
+    exp: Math.exp, floor: Math.floor, ceil: Math.ceil,
+    round: Math.round, sign: Math.sign
+  };
+
+  function evalRPN(rpn, vars={}) {
+    const st = [];
+    for (const t of rpn) {
+      if (t.type === 'num') st.push(t.val);
+      else if (t.type === 'var') st.push(vars[t.name] ?? 0);
+      else if (t.type === 'op') {
+        if (t.val === 'u-') { const a = st.pop(); st.push(-a); }
+        else if (t.val === '!') { const a = st.pop(); st.push(factorial(Math.round(a))); }
+        else {
+          const b = st.pop(), a = st.pop();
+          switch(t.val) {
+            case '+': st.push(a+b); break;
+            case '-': st.push(a-b); break;
+            case '*': st.push(a*b); break;
+            case '/': st.push(a/b); break;
+            case '^': st.push(Math.pow(a,b)); break;
+          }
+        }
+      } else if (t.type === 'func') {
+        const a = st.pop();
+        const f = funcs[t.name];
+        if (f) st.push(f(a)); else throw new Error('未知函数: '+t.name);
+      }
+    }
+    return st[0];
+  }
+
+  function factorial(n) {
+    if (n < 0) return NaN;
+    if (n === 0 || n === 1) return 1;
+    let r = 1;
+    for (let i = 2; i <= n; i++) r *= i;
+    return r;
+  }
+
+  function evalExpr(expr, vars={}) {
+    try {
+      const rpn = toRPN(tokenize(expr));
+      return evalRPN(rpn, vars);
+    } catch(e) { return null; }
+  }
+
+  // 角度转换检测：若含°则转弧度
+  function preprocessExpr(expr) {
+    let s = expr;
+    if (/°|度/.test(s)) {
+      s = s.replace(/(\d+\.?\d*)\s*°?/g, (m,n)=>`(${n}*π/180)`);
+      s = s.replace(/度/g,'');
+    }
+    return s;
+  }
+
+  // ==== 方程求解 ====
+  function solveQuadratic(a,b,c) {
+    if (a === 0) {
+      if (b === 0) return c === 0 ? '无穷多解' : '无解';
+      return `x = ${(-c/b).toFixed(4)}`;
+    }
+    const d = b*b - 4*a*c;
+    if (d > 0) {
+      const x1 = (-b+Math.sqrt(d))/(2*a), x2 = (-b-Math.sqrt(d))/(2*a);
+      return `Δ = ${d} > 0，两个不等实根：<br><span class="formula">x₁ = ${x1.toFixed(4)}，x₂ = ${x2.toFixed(4)}</span>`;
+    } else if (d === 0) {
+      const x = -b/(2*a);
+      return `Δ = 0，重根：<span class="formula">x = ${x.toFixed(4)}</span>`;
+    } else {
+      const re = (-b/(2*a)).toFixed(4), im = (Math.sqrt(-d)/(2*a)).toFixed(4);
+      return `Δ = ${d} < 0，两个共轭复根：<br><span class="formula">x = ${re} ± ${im}i</span>`;
+    }
+  }
+
+  // 解析 ax²+bx+c=0 形式
+  function parseQuadratic(eq) {
+    eq = eq.replace(/\s/g,'').replace(/\^2/g,'²').replace(/\*/g,'');
+    // 移到左边
+    const sides = eq.split('=');
+    let left = sides[0], right = sides[1] || '0';
+    // 简单处理：将右边各项变号移到左边
+    const signRight = right.replace(/^([+-])/, (m,s)=> s==='+'?'-':'+');
+    left = left + (signRight.startsWith('-')||signRight.startsWith('+')?signRight:'+'+signRight);
+    // 提取系数
+    let a=0,b=0,c=0;
+    // x² 项
+    const aMatch = left.match(/([+-]?\d*\.?\d*)x²/);
+    if (aMatch) {
+      let v = aMatch[1];
+      if (v === '' || v === '+') v = '1'; if (v === '-') v = '-1';
+      a = parseFloat(v);
+      left = left.replace(aMatch[0], '');
+    }
+    // x 项
+    const bMatch = left.match(/([+-]?\d*\.?\d*)x(?!²)/);
+    if (bMatch) {
+      let v = bMatch[1];
+      if (v === '' || v === '+') v = '1'; if (v === '-') v = '-1';
+      b = parseFloat(v);
+      left = left.replace(bMatch[0], '');
+    }
+    // 常数项
+    const cMatch = left.match(/([+-]?\d+\.?\d*)/g);
+    if (cMatch) c = cMatch.reduce((s,n)=>s+parseFloat(n),0);
+    return {a,b,c};
+  }
+
+  // 解二元一次方程组 a1x+b1y=c1, a2x+b2y=c2
+  function solveLinear2(a1,b1,c1,a2,b2,c2) {
+    const D = a1*b2 - a2*b1;
+    if (D === 0) return '方程组无解或有无穷多解';
+    const x = (c1*b2 - c2*b1)/D;
+    const y = (a1*c2 - a2*c1)/D;
+    return `x = ${x.toFixed(4)}，y = ${y.toFixed(4)}`;
+  }
+
+  // 解析二元一次方程组
+  function parseSystem(text) {
+    // 找两个方程
+    const eqs = text.split(/[,，;；\n]/).map(s=>s.trim()).filter(s=>s.includes('='));
+    if (eqs.length < 2) return null;
+    const parseEq = (eq) => {
+      eq = eq.replace(/\s/g,'').replace(/\*/g,'');
+      const sides = eq.split('=');
+      let l = sides[0], r = parseFloat(sides[1])||0;
+      let a=0,b=0;
+      const xs = l.match(/([+-]?\d*\.?\d*)x/g);
+      const ys = l.match(/([+-]?\d*\.?\d*)y/g);
+      if (xs) { for (const m of xs) { let v=m.replace('x',''); if(v===''||v==='+')v='1'; if(v==='-')v='-1'; a+=parseFloat(v); l=l.replace(m,''); } }
+      if (ys) { for (const m of ys) { let v=m.replace('y',''); if(v===''||v==='+')v='1'; if(v==='-')v='-1'; b+=parseFloat(v); l=l.replace(m,''); } }
+      const nums = l.match(/[+-]?\d+\.?\d*/g);
+      let c = r;
+      if (nums) for (const n of nums) c -= parseFloat(n);
+      return {a,b,c};
+    };
+    const e1 = parseEq(eqs[0]), e2 = parseEq(eqs[1]);
+    return [e1.a,e1.b,e1.c, e2.a,e2.b,e2.c];
+  }
+
+  // ==== 符号求导 (多项式 + 基本函数) ====
+  function diffPoly(terms) {
+    // terms: [{coef, exp}] 表示 coef * x^exp
+    return terms.map(t => ({coef: t.coef * t.exp, exp: t.exp - 1})).filter(t => t.exp >= 0);
+  }
+  function polyToStr(terms) {
+    if (terms.length === 0) return '0';
+    let s = '';
+    for (const t of terms) {
+      const c = t.coef, e = t.exp;
+      const sign = c >= 0 ? '+' : '-';
+      const absC = Math.abs(c);
+      const coefStr = absC === 1 && e !== 0 ? '' : absC;
+      const xStr = e === 0 ? '' : (e === 1 ? 'x' : `x^${e}`);
+      s += ` ${sign} ${coefStr}${xStr}`;
+    }
+    return s.replace(/^\s*\+\s*/, '').trim();
+  }
+  function parsePolyStr(str) {
+    str = str.replace(/\s/g,'').replace(/\^/g,'^');
+    const terms = [];
+    const matches = str.match(/[+-]?[^+-]+/g) || [];
+    for (const m of matches) {
+      if (m.includes('x')) {
+        const parts = m.split('x');
+        let c = parts[0];
+        if (c === '' || c === '+') c = '1'; if (c === '-') c = '-1';
+        let e = 1;
+        if (parts[1] && parts[1].startsWith('^')) e = parseInt(parts[1].slice(1));
+        terms.push({coef: parseFloat(c), exp: e});
+      } else if (m) {
+        terms.push({coef: parseFloat(m), exp: 0});
+      }
+    }
+    return terms;
+  }
+
+  // ==== 矩阵 ====
+  function parseMatrix(text) {
+    // 支持 [[a,b],[c,d]] 或 (a,b;c,d)
+    text = text.replace(/[（(]/g,'[').replace(/[)）]/g,']').replace(/[;；]/g,'],[');
+    try {
+      const arr = JSON.parse(text.replace(/\s/g,''));
+      return arr;
+    } catch { return null; }
+  }
+  function det2(M) { return M[0][0]*M[1][1] - M[0][1]*M[1][0]; }
+  function det3(M) {
+    return M[0][0]*(M[1][1]*M[2][2]-M[1][2]*M[2][1])
+         - M[0][1]*(M[1][0]*M[2][2]-M[1][2]*M[2][0])
+         + M[0][2]*(M[1][0]*M[2][1]-M[1][1]*M[2][0]);
+  }
+  function detN(M) {
+    const n = M.length;
+    if (n === 1) return M[0][0];
+    if (n === 2) return det2(M);
+    if (n === 3) return det3(M);
+    // 高斯消元
+    const A = M.map(r=>[...r]);
+    let d = 1;
+    for (let i = 0; i < n; i++) {
+      let maxRow = i;
+      for (let k = i+1; k < n; k++) if (Math.abs(A[k][i]) > Math.abs(A[maxRow][i])) maxRow = k;
+      if (A[maxRow][i] === 0) return 0;
+      if (maxRow !== i) { [A[i],A[maxRow]]=[A[maxRow],A[i]]; d = -d; }
+      d *= A[i][i];
+      for (let k = i+1; k < n; k++) {
+        const f = A[k][i]/A[i][i];
+        for (let j = i; j < n; j++) A[k][j] -= f*A[i][j];
+      }
+    }
+    return Math.round(d);
+  }
+  function transpose(M) { return M[0].map((_,c)=>M.map(r=>r[c])); }
+  function matMul(A,B) {
+    const m=A.length, n=B[0].length, k=B.length;
+    const C = Array.from({length:m},()=>Array(n).fill(0));
+    for (let i=0;i<m;i++) for (let j=0;j<n;j++) for (let p=0;p<k;p++) C[i][j]+=A[i][p]*B[p][j];
+    return C;
+  }
+  function matToStr(M) { return M.map(r=>'['+r.map(x=>Number(x.toFixed(4))).join(', ')+']').join('<br>'); }
+
+  // ==== 数论 ====
+  function gcd(a,b) { a=Math.abs(a); b=Math.abs(b); while(b){[a,b]=[b,a%b];} return a; }
+  function lcm(a,b) { return Math.abs(a*b)/gcd(a,b); }
+  function isPrime(n) {
+    if (n<2) return false;
+    for (let i=2; i*i<=n; i++) if (n%i===0) return false;
+    return true;
+  }
+  function primeFactors(n) {
+    const f = {};
+    for (let i=2; i*i<=n; i++) while (n%i===0) { f[i]=(f[i]||0)+1; n/=i; }
+    if (n>1) f[n]=(f[n]||0)+1;
+    return f;
+  }
+  function primeFactorStr(n) {
+    const f = primeFactors(n);
+    return Object.entries(f).map(([p,c])=> c>1 ? `${p}^${c}` : `${p}`).join(' × ');
+  }
+  function divisors(n) {
+    const r = [];
+    for (let i=1; i<=n; i++) if (n%i===0) r.push(i);
+    return r;
+  }
+  function primesUpTo(n) {
+    const sieve = Array(n+1).fill(true);
+    sieve[0] = sieve[1] = false;
+    for (let i=2; i*i<=n; i++) if (sieve[i]) for (let j=i*i; j<=n; j+=i) sieve[j]=false;
+    const r=[];
+    for (let i=2; i<=n; i++) if (sieve[i]) r.push(i);
+    return r;
+  }
+  function sumPrimesUpTo(n) {
+    return primesUpTo(n).reduce((s,p)=>s+p, 0);
+  }
+  function choose(n, k) {
+    if (k < 0 || k > n) return NaN;
+    k = Math.min(k, n-k);
+    let r = 1;
+    for (let i = 1; i <= k; i++) r = r * (n-k+i) / i;
+    return Math.round(r);
+  }
+  function permu(n, k) {
+    if (k < 0 || k > n) return NaN;
+    let r = 1;
+    for (let i = 0; i < k; i++) r *= (n - i);
+    return Math.round(r);
+  }
+
+  // ==== 数列求和 ====
+  function sumArithmetic(a1,d,n) { return n*a1 + n*(n-1)*d/2; }
+  function sumGeometric(a1,q,n) { return q===1 ? a1*n : a1*(1-Math.pow(q,n))/(1-q); }
+  function sumRange(a,b) { return (a+b)*(b-a+1)/2; }
+
+  // ==== 几何 ====
+  const geo = {
+    circleArea: r => PI*r*r, circlePerimeter: r => 2*PI*r,
+    rectangleArea: (a,b)=>a*b, rectanglePerimeter: (a,b)=>2*(a+b),
+    triangleArea: (a,h)=>a*h/2, triangleHeron: (a,b,c)=>{
+      const s=(a+b+c)/2; return Math.sqrt(s*(s-a)*(s-b)*(s-c));
+    },
+    sphereVolume: r=>4/3*PI*r*r*r, sphereArea: r=>4*PI*r*r,
+    cubeVolume: a=>a*a*a,
+    distance: (x1,y1,x2,y2)=>Math.sqrt((x2-x1)**2+(y2-y1)**2),
+  };
+
+  return { evalExpr, preprocessExpr, solveQuadratic, parseQuadratic, solveLinear2, parseSystem,
+           diffPoly, parsePolyStr, polyToStr,
+           parseMatrix, detN, transpose, matMul, matToStr, det2,
+           gcd, lcm, isPrime, primeFactorStr, divisors, primesUpTo, sumPrimesUpTo, choose, permu, factorial,
+           sumArithmetic, sumGeometric, sumRange, geo, PI };
+})();
+
+/* ========== 高频概念解说词典 ========== */
+const concepts = {
+  '指数爆炸': `<strong>指数爆炸（指数增长）</strong>指的是当一个量按固定比例（而非固定数额）增长时，数值随时间急剧膨胀的现象，增长速度远超直觉预期。<br><br>
+<div class="formula-box">y = a·qˣ　（q > 1）</div>
+<h4>经典例子</h4>
+• 折纸：一张纸对折 42 次，厚度 ≈ 纸厚 × 2⁴² ≈ 44 万公里，超过地球到月球的距离；<br>
+• 棋盘麦粒：第 n 格放 2ⁿ⁻¹ 粒麦，第 64 格约为 9.2×10¹⁸ 粒；<br>
+• 复利：本金按利率复利滚存，时间越长增长越陡。<br>
+<h4>与线性增长对比</h4>
+线性增长：每次加固定值（如每天 +10），图像是直线；<br>
+指数增长：每次乘固定倍数（如每天翻倍），图像是先缓后陡的曲线。<br>
+因此"指数爆炸"常用来形容增长极快、难以控制的现象。`,
+  '有理数': `<strong>有理数</strong>是能表示为两个整数之比的数，即形如 p/q（p、q 为整数，q≠0）的数。<br><br>
+<div class="formula-box">有理数 = { p/q | p,q∈Z, q≠0 }</div>
+包括整数、有限小数、无限循环小数。例如：1/2、-3、0.75、0.333…。<br>
+每个有理数的小数形式要么有限、要么循环。`,
+  '无理数': `<strong>无理数</strong>是不能表示为两个整数之比的数，即无限不循环小数。<br><br>
+<div class="formula-box">无理数 = 无限不循环小数</div>
+经典例子：√2、√3、π、e。<br>
+例如 √2 ≈ 1.41421356…，小数位无限且不循环，故为无理数。<br>
+有理数与无理数统称 <strong>实数</strong>。`,
+  '勾股定理': `<strong>勾股定理（毕达哥拉斯定理）</strong>：在直角三角形中，两条直角边的平方和等于斜边的平方。<br><br>
+<div class="formula-box">a² + b² = c²</div>
+其中 a、b 为直角边，c 为斜边。<br>
+<h4>常见勾股数</h4>
+(3,4,5)、(5,12,13)、(8,15,17)、(7,24,25)。<br>
+<h4>例题</h4>
+直角边为 6 和 8，则斜边 c = √(6²+8²) = √100 = 10。`,
+  '黄金比例': `<strong>黄金比例</strong>（φ ≈ 1.618）是指把一条线段分成两段，较长段与整段的比值等于较短段与较长段的比值。<br><br>
+<div class="formula-box">φ = (1 + √5) / 2 ≈ 1.618</div>
+它广泛出现在艺术、建筑、自然界中，被认为具有和谐的美感。`,
+  '无穷大': `<strong>无穷大</strong>是描述一个量无限增大、没有上界的数学概念，用符号 ∞ 表示。<br><br>
+它不是一个具体的数，而是一种趋势。例如数列 1, 2, 3, … 的极限趋近于 ∞。<br>
+注意：无穷大不能参与普通四则运算，需用极限语言描述。`,
+  '斐波那契数列': `<strong>斐波那契数列</strong>：从第 3 项起，每一项都等于前两项之和。<br><br>
+<div class="formula-box">F(n) = F(n-1) + F(n-2)，F(1)=F(2)=1</div>
+序列：1、1、2、3、5、8、13、21、34……<br>
+它与黄金比例、自然界中植物生长规律密切相关。`
+};
+
+/* ========== 答疑引擎 ========== */
+function answerQuestion(q) {
+  q = q.trim();
+  // 规范化：上标→^n，中文乘除→*/，统一供解析表达式使用
+  q = q.replace(/²/g,'^2').replace(/³/g,'^3').replace(/⁴/g,'^4').replace(/⁵/g,'^5').replace(/⁶/g,'^6').replace(/⁷/g,'^7').replace(/⁸/g,'^8').replace(/⁹/g,'^9').replace(/⁰/g,'^0').replace(/¹/g,'^1').replace(/×/g,'*').replace(/÷/g,'/');
+  const lower = q.toLowerCase();
+  stats.askCount++; save(); updateStats();
+
+  // 0. 纯表达式求值
+  if (/^[-+*/^().\d\s×÷πe!sincotalgqbrtpxy°]+$/i.test(q) && /[-+*/^]/.test(q)) {
+    const expr = MathEngine.preprocessExpr(q);
+    const v = MathEngine.evalExpr(expr);
+    if (v !== null && !isNaN(v)) {
+      return `计算表达式：<span class="formula">${q}</span><br><div class="result-box">= ${Number(v.toFixed(6))}</div>`;
+    }
+  }
+
+  // 1. 方程求解
+  if (/方程|求解|解.*=|=.*0/.test(q) && q.includes('=')) {
+    // 方程组
+    if (q.split('=').length > 2 || /[,，;；]/.test(q)) {
+      const sys = MathEngine.parseSystem(q);
+      if (sys) {
+        const [a1,b1,c1,a2,b2,c2] = sys;
+        const r = MathEngine.solveLinear2(a1,b1,c1,a2,b2,c2);
+        return `解二元一次方程组：<div class="formula">${a1}x + ${b1}y = ${c1}<br>${a2}x + ${b2}y = ${c2}</div>
+<div class="step">用克莱姆法则：D = a₁b₂ - a₂b₁ = ${a1*b2 - a2*b1}</div>
+<div class="result-box">${r}</div>`;
+      }
+    }
+    // 一元二次
+    if (/x\s*[\^²]2|x²/.test(q)) {
+      const {a,b,c} = MathEngine.parseQuadratic(q);
+      const r = MathEngine.solveQuadratic(a,b,c);
+      return `用求根公式解一元二次方程：<div class="formula">${a}x² + ${b}x + ${c} = 0</div>
+<div class="step">求根公式：x = [-b ± √(b²-4ac)] / (2a)</div>
+<div class="step">Δ = b² - 4ac = ${b*b-4*a*c}</div>
+<div class="result-box">${r}</div>`;
+    }
+    // 一元一次
+    const m = q.match(/([+-]?\s*\d*\.?\d*)\s*x\s*([+-]\s*\d+\.?\d*)?\s*=\s*([+-]?\s*\d+\.?\d*)/);
+    if (m) {
+      let a = parseFloat((m[1]||'1').replace(/\s/g,'')) || 1;
+      let b = parseFloat((m[2]||'0').replace(/\s/g,'')) || 0;
+      let c = parseFloat((m[3]||'0').replace(/\s/g,'')) || 0;
+      const x = (c - b) / a;
+      return `解一元一次方程：<div class="formula">${q.replace(/\s/g,'')}</div>
+<div class="step">移项：${a}x = ${c-b}</div>
+<div class="step">系数化为1：x = ${c-b} ÷ ${a}</div>
+<div class="result-box">x = ${Number(x.toFixed(4))}</div>`;
+    }
+  }
+
+  // 2. 求导
+  if (/求导|导数|微分|对.*求导|derivative/i.test(q)) {
+    const polyMatch = q.match(/y\s*=\s*([\d\w\+\-\^\s\.]+)/) || q.match(/f\(x\)\s*=\s*([\d\w\+\-\^\s\.]+)/);
+    let polyStr = polyMatch ? polyMatch[1] : q;
+    polyStr = polyStr.replace(/\s/g,'').replace(/\^/g,'^').replace(/×/g,'*').replace(/\*/g,'');
+    const terms = MathEngine.parsePolyStr(polyStr);
+    if (terms.length) {
+      const d = MathEngine.diffPoly(terms);
+      return `对多项式求导：<div class="formula">f(x) = ${MathEngine.polyToStr(terms)}</div>
+<div class="step">逐项求导：(xⁿ)' = n·xⁿ⁻¹，常数项导数为 0</div>
+<div class="result-box">f'(x) = ${MathEngine.polyToStr(d)}</div>`;
+    }
+    return `<strong>导数</strong>是函数的瞬时变化率。<br>定义：<span class="formula">f'(x) = lim(Δx→0) [f(x+Δx)-f(x)]/Δx</span><br>常用公式：<span class="formula">(xⁿ)'=nxⁿ⁻¹, (sin x)'=cos x, (eˣ)'=eˣ, (ln x)'=1/x</span><br>请给出具体函数，如 y=x³+2x。`;
+  }
+
+  // 3. 积分
+  if (/积分|∫|integral/i.test(q)) {
+    let s = q.replace(/积分|∫|integral|不定积分|定积分|求|计算|化简|dx/gi,'').replace(/[()（）]/g,'').trim();
+    if (/^[0-9x^+*.\-\s]+$/.test(s) && s.includes('x')) {
+      const terms = MathEngine.parsePolyStr(s.replace(/\*/g,''));
+      if (terms.length) {
+        const intTerms = terms.map(t => ({ coef: Number((t.coef/(t.exp+1)).toFixed(4)), exp: t.exp+1 }));
+        return `求不定积分 ∫(${MathEngine.polyToStr(terms)})dx：<div class="step">利用公式 ∫xⁿdx = xⁿ⁺¹/(n+1) + C，逐项积分</div><div class="result-box">= ${MathEngine.polyToStr(intTerms)} + C</div>`;
+      }
+    }
+    return `<strong>积分</strong>是导数的逆运算。<br>基本公式：<div class="formula">∫xⁿdx = xⁿ⁺¹/(n+1) + C (n≠-1)<br>∫sin x dx = -cos x + C<br>∫cos x dx = sin x + C<br>∫eˣdx = eˣ + C<br>∫1/x dx = ln|x| + C</div>
+例题：<span class="formula">∫x²dx = x³/3 + C</span>`;
+  }
+
+  // 4. 矩阵
+  if (/矩阵|行列式|转置|matrix|determinant/i.test(q)) {
+    const matMatch = q.match(/\[\[.*\]\]/);
+    if (matMatch) {
+      const M = MathEngine.parseMatrix(matMatch[0]);
+      if (M) {
+        if (/行列式|det/i.test(q)) {
+          return `矩阵 M =<div class="formula">${MathEngine.matToStr(M)}</div>
+<div class="step">按行列式展开计算</div>
+<div class="result-box">det(M) = ${MathEngine.detN(M)}</div>`;
+        }
+        if (/转置/i.test(q)) {
+          const T = MathEngine.transpose(M);
+          return `矩阵 M =<div class="formula">${MathEngine.matToStr(M)}</div>
+<div class="step">行列互换得到转置</div>
+<div class="result-box">Mᵀ =<br>${MathEngine.matToStr(T)}</div>`;
+        }
+        return `矩阵 M =<div class="formula">${MathEngine.matToStr(M)}</div>
+你可以问我"求行列式"或"求转置"。`;
+      }
+    }
+    return `<strong>矩阵</strong>是 m×n 个数排成的数表。<br>行列式：二阶 <span class="formula">|a b; c d| = ad-bc</span><br>转置：行列互换。<br>请用 [[a,b],[c,d]] 格式给出矩阵。`;
+  }
+
+  // 5. 数论
+  if (/最大公约数|gcd|gcf/i.test(q)) {
+    const nums = q.match(/\d+/g);
+    if (nums && nums.length >= 2) {
+      const a=parseInt(nums[0]), b=parseInt(nums[1]);
+      return `求 ${a} 和 ${b} 的最大公约数：<div class="step">辗转相除法：gcd(${a},${b}) = gcd(${b}, ${a%b}) = ...</div><div class="result-box">gcd(${a},${b}) = ${MathEngine.gcd(a,b)}</div>`;
+    }
+  }
+  if (/最小公倍数|lcm/i.test(q)) {
+    const nums = q.match(/\d+/g);
+    if (nums && nums.length >= 2) {
+      const a=parseInt(nums[0]), b=parseInt(nums[1]);
+      return `${a} 和 ${b} 的最小公倍数：<div class="result-box">lcm(${a},${b}) = ${MathEngine.lcm(a,b)}</div>`;
+    }
+  }
+  if (/质因数|分解质因数|prime factor/i.test(q)) {
+    const nums = q.match(/\d+/g);
+    if (nums) {
+      const n = parseInt(nums[0]);
+      return `将 ${n} 分解质因数：<div class="result-box">${n} = ${MathEngine.primeFactorStr(n)}</div>`;
+    }
+  }
+  if (/素数|质数|is prime/i.test(q)) {
+    // ① N以内素数的和
+    if (/和|sum/i.test(q)) {
+      const nums = q.match(/\d+/g);
+      if (nums) {
+        const n = parseInt(nums[0]);
+        const primes = MathEngine.primesUpTo(n);
+        const sum = MathEngine.sumPrimesUpTo(n);
+        return `求 ${n} 以内所有素数的和：<div class="step">第1步：筛出 ${n} 以内的全部素数（共 ${primes.length} 个）：<br><span class="formula">${primes.join('、')}</span></div><div class="step">第2步：将它们相加：${primes.join(' + ')}</div><div class="result-box">和 = ${sum}</div>`;
+      }
+    }
+    // ② 概念：素数/质数是什么
+    if (/什么是|是什么|定义|概念|介绍|解释|含义/.test(q)) {
+      return `<strong>素数（又称质数）</strong>是指在大于 1 的自然数中，除了 1 和它本身以外，不再有其他因数的数。<br><br>
+<div class="formula-box"><strong>定义</strong>：大于 1 的自然数 p，若它只有 1 和 p 两个正因数，则 p 为素数。</div>
+<h4>关键要点</h4>
+• 最小的素数是 <span class="formula">2</span>，且 2 是唯一的偶素数；<br>
+• <span class="formula">1</span> 不是素数（它只有一个正因数）；<br>
+• 大于 1 且不是素数的数叫 <strong>合数</strong>（至少有 3 个因数）。<br>
+<h4>举例</h4>
+素数：2、3、5、7、11、13、17、19、23、29……<br>
+合数：4=2×2、6=2×3、8=2×2×2、9=3×3、10=2×5……<br>
+<h4>判断方法</h4>
+判断 n 是否为素数，只需检验 2 到 √n 之间的整数能否整除 n 即可。<br>
+例如判断 100：√100=10，在 2~10 中 2 能整除 100，所以 100 是合数。<br>`;
+    }
+    // ③ 列出N以内的素数
+    if (/以内|列出|有哪些|list/i.test(q)) {
+      const nums = q.match(/\d+/g);
+      if (nums) {
+        const n = parseInt(nums[0]);
+        const primes = MathEngine.primesUpTo(n);
+        return `${n} 以内的素数共有 ${primes.length} 个：<div class="result-box">${primes.join('、')}</div>`;
+      }
+    }
+    // ④ 判断单个数是否为素数
+    const nums = q.match(/\d+/g);
+    if (nums) {
+      const n = parseInt(nums[0]);
+      if (n < 1) return '请在问题中给出一个大于 0 的整数。';
+      const r = MathEngine.isPrime(n);
+      if (n === 1) return '<div class="result-box">1 不是素数（也不是合数）</div>因为 1 只有 1 这一个正因数，不满足"恰好两个因数"的素数定义。';
+      if (r) return `<div class="result-box">${n} 是素数</div>因为 ${n} 只有 1 和 ${n} 两个正因数。`;
+      const ds = MathEngine.divisors(n);
+      return `<div class="result-box">${n} 不是素数（是合数）</div>因为它的正因数共有 ${ds.length} 个：<span class="formula">${ds.join('、')}</span>，多于 2 个。<br>质因数分解：${n} = ${MathEngine.primeFactorStr(n)}`;
+    }
+    return `<strong>素数（质数）</strong>：大于 1 的自然数中，除了 1 和它本身外没有其他因数的数。最小的素数是 2。你可以问："100 以内素数的和"、"列出 50 以内素数"、"97 是不是素数"。`;
+  }
+  if (/阶乘|factorial|!/.test(q)) {
+    const nums = q.match(/\d+/g);
+    if (nums) {
+      const n = parseInt(nums[0]);
+      return `${n}! 的计算：<div class="step">${n}! = ${Array.from({length:n},(_,i)=>i+1).join(' × ')}</div><div class="result-box">${n}! = ${MathEngine.factorial(n)}</div>`;
+    }
+  }
+
+  // 6. 几何
+  if (/圆.*面积|面积.*圆/.test(q) && !/球/.test(q)) {
+    const nums = q.match(/\d+\.?\d*/g);
+    if (nums) { const r=parseFloat(nums[0]); return `圆面积公式 S = πr²：<div class="result-box">S = π × ${r}² = ${(MathEngine.PI*r*r).toFixed(4)}</div>`; }
+  }
+  if (/圆.*周长|周长.*圆/.test(q)) {
+    const nums = q.match(/\d+\.?\d*/g);
+    if (nums) { const r=parseFloat(nums[0]); return `圆周长公式 C = 2πr：<div class="result-box">C = 2 × π × ${r} = ${(2*MathEngine.PI*r).toFixed(4)}</div>`; }
+  }
+  if (/球.*体积|体积.*球/.test(q)) {
+    const nums = q.match(/\d+\.?\d*/g);
+    if (nums) { const r=parseFloat(nums[0]); return `球体积公式 V = (4/3)πr³：<div class="result-box">V = (4/3) × π × ${r}³ = ${(4/3*MathEngine.PI*r*r*r).toFixed(4)}</div>`; }
+  }
+  if (/面积|体积|周长/.test(q)) {
+    const nums = q.match(/\d+\.?\d*/g);
+    if (nums && nums.length >= 2) {
+      if (/长方|矩形/.test(q)) {
+        const a=parseFloat(nums[0]), b=parseFloat(nums[1]);
+        return `长方形面积 S = a×b = ${a}×${b} = <span class="formula">${a*b}</span>，周长 C = 2(a+b) = <span class="formula">${2*(a+b)}</span>`;
+      }
+      if (/三角/.test(q) && nums.length >= 2) {
+        const a=parseFloat(nums[0]), h=parseFloat(nums[1]);
+        return `三角形面积 S = ½×底×高 = ½×${a}×${h} = <span class="formula">${a*h/2}</span>`;
+      }
+    }
+  }
+
+  // 7. 数列求和
+  if (/从.*到.*的和|1到.*和|求和|sum/i.test(q)) {
+    const nums = q.match(/\d+/g);
+    if (nums && nums.length >= 2) {
+      const a=parseInt(nums[0]), b=parseInt(nums[1]);
+      return `从 ${a} 到 ${b} 的求和：<div class="step">等差数列求和：S = (首项+末项)×项数/2</div><div class="result-box">S = (${a}+${b})×${b-a+1}/2 = ${MathEngine.sumRange(a,b)}</div>`;
+    }
+  }
+  if (/等差.*和|等比.*和/.test(q)) {
+    const nums = q.match(/\d+\.?\d*/g);
+    if (nums && nums.length >= 3) {
+      if (/等差/.test(q)) {
+        const a1=parseFloat(nums[0]), d=parseFloat(nums[1]), n=parseInt(nums[2]);
+        return `等差数列求和 S = na₁ + n(n-1)d/2：<div class="result-box">S = ${n}×${a1} + ${n}×${n-1}×${d}/2 = ${MathEngine.sumArithmetic(a1,d,n)}</div>`;
+      }
+      if (/等比/.test(q)) {
+        const a1=parseFloat(nums[0]), q=parseFloat(nums[1]), n=parseInt(nums[2]);
+        return `等比数列求和 S = a₁(1-qⁿ)/(1-q)：<div class="result-box">S = ${a1}×(1-${q}^${n})/(1-${q}) = ${MathEngine.sumGeometric(a1,q,n).toFixed(4)}</div>`;
+      }
+    }
+  }
+
+  // 8. 三角函数求值
+  if (/sin|cos|tan|cot/i.test(q)) {
+    const expr = MathEngine.preprocessExpr(q);
+    const v = MathEngine.evalExpr(expr);
+    if (v !== null && !isNaN(v)) {
+      return `三角函数求值：<span class="formula">${q}</span><div class="step">若含角度°，先转换为弧度</div><div class="result-box">= ${Number(v.toFixed(6))}</div>`;
+    }
+  }
+
+  // 9. 对数/指数
+  if (/log|ln|log2/i.test(q)) {
+    const v = MathEngine.evalExpr(q);
+    if (v !== null && !isNaN(v)) return `<span class="formula">${q}</span> = <div class="result-box">${Number(v.toFixed(6))}</div>`;
+  }
+
+  // 10. 概率
+  if (/概率|probability/i.test(q)) {
+    return `<strong>概率</strong>：0 ≤ P(A) ≤ 1。<br>古典概型：<span class="formula">P(A) = m/n</span><br>加法公式：<span class="formula">P(A∪B) = P(A) + P(B) - P(A∩B)</span><br>乘法公式：<span class="formula">P(A∩B) = P(A)·P(B|A)</span>`;
+  }
+
+  // 10.5 排列组合
+  if (/排列|组合|[CA]\s*\(|二项式/i.test(q) || /\d\s*(?:选|取)\s*\d/.test(q)) {
+    let m = q.match(/[CA]\s*\(\s*(\d+)\s*[,，]\s*(\d+)\s*\)/i) || q.match(/(\d+)\s*(?:选|取)\s*(\d+)/);
+    if (m) {
+      const n = parseInt(m[1]), k = parseInt(m[2]);
+      if (k < 0 || k > n) return `参数无效，需满足 0 ≤ k ≤ n（你给了 n=${n}, k=${k}）。`;
+      const isPerm = /排列|A\s*\(/i.test(q);
+      if (isPerm) {
+        return `排列数 A(${n},${k})：从 ${n} 个不同元素中取出 ${k} 个进行<strong>有序</strong>排列。<div class="formula">A(n,k) = n!/(n-k)! = ${n}×${n-1}×…×${n-k+1}</div><div class="result-box">A(${n},${k}) = ${MathEngine.permu(n,k)}</div>`;
+      }
+      return `组合数 C(${n},${k})：从 ${n} 个不同元素中取出 ${k} 个（<strong>顺序无关</strong>）。<div class="formula">C(n,k) = n!/[k!(n-k)!]</div><div class="step">C(${n},${k}) = ${n}! / (${k}! × ${n-k}!) = ${MathEngine.factorial(n)} / (${MathEngine.factorial(k)} × ${MathEngine.factorial(n-k)})</div><div class="result-box">C(${n},${k}) = ${MathEngine.choose(n,k)}</div>`;
+    }
+  }
+
+  // 10.6 统计：平均数/中位数/众数/方差/标准差
+  if (/平均数|平均值|中位数|众数|方差|标准差/i.test(q)) {
+    const nums = q.match(/\d+(?:\.\d+)?/g);
+    if (nums && nums.length >= 1) {
+      const arr = nums.map(Number).slice().sort((a,b)=>a-b);
+      const n = arr.length;
+      const mean = arr.reduce((a,b)=>a+b,0)/n;
+      if (/中位数/.test(q)) {
+        const med = n%2 ? arr[(n-1)/2] : (arr[n/2-1]+arr[n/2])/2;
+        return `先将数据从小到大排列：<span class="formula">${arr.join('、')}</span><div class="step">共 ${n} 个数${n%2?'，中位数是正中间第 '+((n+1)/2)+' 位':'，中位数是中间两个数的平均'}</div><div class="result-box">中位数 = ${med}</div>`;
+      }
+      if (/众数/.test(q)) {
+        const c={}; arr.forEach(v=>c[v]=(c[v]||0)+1);
+        const mx=Math.max(...Object.values(c));
+        const modes=Object.keys(c).filter(k=>c[k]===mx);
+        return `众数是出现次数最多的数：<div class="result-box">众数 = ${modes.join('、')}（各出现 ${mx} 次）</div>`;
+      }
+      if (/标准差/.test(q)) {
+        const varr = arr.reduce((s,v)=>s+(v-mean)**2,0)/n;
+        return `标准差 σ = √[Σ(x-μ)²/n]：<div class="step">平均数 μ = ${Number(mean.toFixed(4))}</div><div class="step">方差 = Σ(x-μ)²/n = ${Number(varr.toFixed(4))}</div><div class="result-box">标准差 σ = ${Math.sqrt(varr).toFixed(4)}</div>`;
+      }
+      if (/方差/.test(q)) {
+        const varr = arr.reduce((s,v)=>s+(v-mean)**2,0)/n;
+        return `方差 = Σ(x-μ)²/n：<div class="step">平均数 μ = ${Number(mean.toFixed(4))}</div><div class="result-box">方差 = ${Number(varr.toFixed(4))}</div>`;
+      }
+      return `平均数 = 总和 ÷ 个数：<div class="step">总和 = ${arr.join('+')} = ${arr.reduce((a,b)=>a+b,0)}</div><div class="step">个数 = ${n}</div><div class="result-box">平均数 = ${Number(mean.toFixed(4))}</div>`;
+    }
+  }
+
+  // 10.7 百分比
+  if (/%|百分之/.test(q)) {
+    let m = q.match(/(\d+\.?\d*)\s*的\s*(\d+\.?\d*)\s*%/);
+    if (m) {
+      const base = parseFloat(m[1]), p = parseFloat(m[2]);
+      return `${base} 的 ${p}% ：<div class="step">${base} × ${p}% = ${base} × ${p}/100 = ${base} × ${p/100}</div><div class="result-box">= ${(base*p/100).toFixed(4)}</div>`;
+    }
+    m = q.match(/百分之\s*(\d+\.?\d*)\s*(?:的|是|为)\s*(\d+\.?\d*)/);
+    if (m) {
+      const p = parseFloat(m[1]), base = parseFloat(m[2]);
+      return `${base} 的百分之 ${p} ：<div class="step">${base} × ${p}/100 = ${base} × ${p/100}</div><div class="result-box">= ${(base*p/100).toFixed(4)}</div>`;
+    }
+  }
+
+  // 10.8 解一元一次不等式
+  if (/不等式/.test(q) || /[<>≥≤]/.test(q)) {
+    const m = q.match(/([+-]?\s*\d*\.?\d*)\s*x\s*([+-]\s*\d+\.?\d*)?\s*(>=|<=|≥|≤|>|<)\s*([+-]?\s*\d+\.?\d*)/);
+    if (m) {
+      let a = parseFloat((m[1] || '1').replace(/\s/g,'')) || 1;
+      let b = parseFloat((m[2] || '0').replace(/\s/g,'')) || 0;
+      const op = m[3];
+      const c = parseFloat(m[4]) || 0;
+      const rhs = c - b;
+      let sym = op;
+      if (a < 0) {
+        sym = {'>':'<','<':'>','>=':'<=','<=':'>=','≥':'≤','≤':'≥'}[op];
+      }
+      const opShow = {'>':'＞','<':'＜','>=':'≥','<=':'≤','≥':'≥','≤':'≤'};
+      const x = rhs / a;
+      return `解不等式 ${a}x ${b>=0?'+'+b:b} ${opShow[op]} ${c}：<div class="step">移项：${a}x ${opShow[op]} ${c-b}</div><div class="step">${a===1?'':(a<0?'系数为负，除以负数，不等号反向 → ':'')}x ${opShow[sym]} ${Number(x.toFixed(4))}</div><div class="result-box">x ${opShow[sym]} ${Number(x.toFixed(4))}</div>`;
+    }
+  }
+
+  // 11. 概念解说（concepts 词典 + knowledge 词典）
+  for (const k of Object.keys(concepts)) {
+    if (q.includes(k)) return concepts[k];
+  }
+  if (/什么是|是什么|定义|概念|公式|含义|解释|介绍/.test(q)) {
+    for (const k of Object.keys(knowledge)) {
+      if (q.includes(k)) return `<strong>${k}</strong>：${knowledge[k].desc}。\n\n` + knowledge[k].content;
+    }
+    // 模糊概念兜底
+    if (/指数|对数/.test(q)) return '指数与对数是互逆运算。<span class="formula">aˣ = N ⟺ x = logₐN</span>。你可以问"什么是指数爆炸"或具体计算如"2⁵"。';
+  }
+
+  // 12. 问候
+  if (/你好|hi|hello|在吗/i.test(q)) {
+    return '你好！我是数学智能助教 MathMind Pro 🤖。我可以帮你：解方程、求导、积分、矩阵运算、几何计算、数论（GCD/质因数分解）、数列求和、三角函数求值等。试试问我"求 x²-5x+6=0 的解"或"12和18的最大公约数"。';
+  }
+
+  // 13. 回退：尝试直接作为表达式求值
+  const expr = MathEngine.preprocessExpr(q);
+  const v = MathEngine.evalExpr(expr);
+  if (v !== null && !isNaN(v)) {
+    return `计算：<span class="formula">${q}</span><div class="result-box">= ${Number(v.toFixed(6))}</div>`;
+  }
+
+  return `我是数学智能助教，可以帮你解决各类数学问题。你可以这样问：<br>
+• 解方程：x²-5x+6=0<br>
+• 求导：y=x³+2x 的导数<br>
+• 矩阵：[[1,2],[3,4]] 的行列式<br>
+• 数论：12和18的最大公约数、分解质因数 360<br>
+• 几何：圆面积 r=5、球体积 r=3<br>
+• 数列：从1到100的和<br>
+• 三角：sin(30°)+cos(60°)<br>
+• 阶乘：5!<br><br>请尽量描述清楚，我会给出分步骤解析。`;
+}
+
+/* ========== 聊天界面 ========== */
+const chatBox = document.getElementById('chatBox');
+function addMsg(text, who, html) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + who;
+  div.innerHTML = `<div class="avatar">${who === 'bot' ? '🤖' : '😊'}</div><div class="bubble">${html || escapeHtml(text)}</div>`;
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function botThinking() {
+  const div = document.createElement('div');
+  div.className = 'msg bot'; div.id = 'thinking';
+  div.innerHTML = `<div class="avatar">🤖</div><div class="bubble">思考中...</div>`;
+  chatBox.appendChild(div);
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+function removeThinking() { const t = document.getElementById('thinking'); if (t) t.remove(); }
+
+function sendMsg() {
+  const input = document.getElementById('userInput');
+  const q = input.value.trim();
+  if (!q) return;
+  addMsg(q, 'user');
+  input.value = '';
+  botThinking();
+  setTimeout(() => {
+    removeThinking();
+    try { addMsg('', 'bot', answerQuestion(q)); }
+    catch(e) { addMsg('抱歉，处理时出错：' + e.message, 'bot'); }
+  }, 400 + Math.random()*400);
+}
+document.getElementById('sendBtn').addEventListener('click', sendMsg);
+document.getElementById('userInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendMsg(); });
+document.querySelectorAll('.quick-q').forEach(b => {
+  b.addEventListener('click', () => { document.getElementById('userInput').value = b.textContent; sendMsg(); });
+});
+addMsg('你好！我是数学智能助教 MathMind Pro 🤖，具备全栈数学求解能力。试试问我解方程、求导、矩阵、GCD、几何计算等问题。', 'bot');
+
+/* ========== 知识点讲解（20+模块） ========== */
+const knowledge = {
+  '实数与运算': { icon:'🔢', desc:'有理数、无理数、绝对值、幂运算', content:`<h4>实数分类</h4><div class="formula-box">实数 = 有理数(整数+分数) ∪ 无理数(无限不循环小数)</div>
+<h4>绝对值</h4><p>|a| = a (a≥0)，|a| = -a (a<0)</p>
+<h4>幂运算</h4><div class="formula-box">aᵐ·aⁿ = aᵐ⁺ⁿ；(aᵐ)ⁿ = aᵐⁿ；a⁰ = 1 (a≠0)</div>` },
+  '代数式': { icon:'📐', desc:'整式、分式、因式分解', content:`<h4>乘法公式</h4>
+<div class="formula-box">(a+b)² = a²+2ab+b²<br>(a-b)² = a²-2ab+b²<br>a²-b² = (a+b)(a-b)<br>(a+b)³ = a³+3a²b+3ab²+b³</div>
+<h4>因式分解方法</h4><p>提公因式法、公式法、十字相乘法、分组分解法</p>` },
+  '一次方程与不等式': { icon:'➖', desc:'一元一次方程、不等式', content:`<h4>一元一次方程</h4><p>ax + b = 0 (a≠0)，解为 x = -b/a</p>
+<h4>不等式性质</h4><div class="formula-box">若 a>b, c>0 则 ac>bc；若 c<0 则 ac<bc</div>` },
+  '二次方程': { icon:'📈', desc:'一元二次方程、韦达定理', content:`<h4>求根公式</h4><div class="formula-box">x = [-b ± √(b²-4ac)] / (2a)</div>
+<p>判别式 Δ = b²-4ac：Δ>0 两不等实根；Δ=0 重根；Δ<0 共轭复根。</p>
+<h4>韦达定理</h4><div class="formula-box">x₁+x₂ = -b/a，x₁·x₂ = c/a</div>` },
+  '函数': { icon:'📊', desc:'一次函数、二次函数、反比例函数', content:`<h4>二次函数</h4><p>y = ax²+bx+c (a≠0)，顶点 (-b/2a, (4ac-b²)/4a)</p>
+<h4>性质</h4><p>a>0 开口向上，有最小值；a<0 开口向下，有最大值</p>` },
+  '三角函数': { icon:'📐', desc:'正弦、余弦、正切及恒等式', content:`<h4>定义</h4><div class="formula-box">sin θ = 对/斜，cos θ = 邻/斜，tan θ = 对/邻</div>
+<h4>基本恒等式</h4><div class="formula-box">sin²θ + cos²θ = 1<br>tan θ = sin θ / cos θ</div>
+<h4>特殊角</h4><div class="formula-box">sin30°=1/2, cos60°=1/2, sin45°=cos45°=√2/2</div>` },
+  '平面几何': { icon:'📏', desc:'三角形、四边形、圆', content:`<h4>三角形</h4><p>内角和 180°；两边之和大于第三边</p>
+<h4>圆</h4><div class="formula-box">面积 S = πr²，周长 C = 2πr</div>
+<h4>勾股定理</h4><div class="formula-box">a² + b² = c²（直角三角形）</div>` },
+  '立体几何': { icon:'🧊', desc:'表面积、体积', content:`<h4>常见体积</h4><div class="formula-box">正方体 V=a³；长方体 V=abc<br>圆柱 V=πr²h；圆锥 V=πr²h/3<br>球 V=(4/3)πr³</div>
+<h4>球表面积</h4><div class="formula-box">S = 4πr²</div>` },
+  '解析几何': { icon:'📍', desc:'直线、圆的方程', content:`<h4>直线方程</h4><div class="formula-box">点斜式：y-y₁ = k(x-x₁)<br>一般式：Ax+By+C = 0</div>
+<h4>圆方程</h4><div class="formula-box">(x-a)² + (y-b)² = r²</div>
+<h4>两点距离</h4><div class="formula-box">d = √[(x₂-x₁)²+(y₂-y₁)²]</div>` },
+  '数列': { icon:'🔢', desc:'等差数列、等比数列', content:`<h4>等差数列</h4><div class="formula-box">通项 aₙ = a₁+(n-1)d<br>求和 Sₙ = n(a₁+aₙ)/2 = na₁+n(n-1)d/2</div>
+<h4>等比数列</h4><div class="formula-box">通项 aₙ = a₁·qⁿ⁻¹<br>求和 Sₙ = a₁(1-qⁿ)/(1-q) (q≠1)</div>` },
+  '导数': { icon:'📈', desc:'变化率、求导法则', content:`<h4>定义</h4><div class="formula-box">f'(x) = lim(Δx→0) [f(x+Δx)-f(x)]/Δx</div>
+<h4>基本公式</h4><div class="formula-box">(xⁿ)'=nxⁿ⁻¹, (sin x)'=cos x, (cos x)'=-sin x<br>(eˣ)'=eˣ, (ln x)'=1/x, (aˣ)'=aˣ·ln a</div>
+<h4>几何意义</h4><p>曲线在该点切线的斜率</p>` },
+  '积分': { icon:'∫', desc:'不定积分、定积分', content:`<h4>不定积分</h4><div class="formula-box">∫f(x)dx = F(x)+C，其中 F'(x)=f(x)</div>
+<h4>基本公式</h4><div class="formula-box">∫xⁿdx = xⁿ⁺¹/(n+1)+C<br>∫sin x dx = -cos x+C<br>∫eˣdx = eˣ+C</div>
+<h4>牛顿-莱布尼茨公式</h4><div class="formula-box">∫ₐᵇ f(x)dx = F(b)-F(a)</div>` },
+  '极限': { icon:'♾️', desc:'数列极限、函数极限', content:`<h4>重要极限</h4><div class="formula-box">lim(x→0) sin x / x = 1<br>lim(x→∞) (1+1/x)ˣ = e</div>
+<h4>极限运算法则</h4><p>若 lim f(x)=A, lim g(x)=B，则 lim(f±g)=A±B，lim(f·g)=A·B</p>` },
+  '概率': { icon:'🎲', desc:'古典概型、条件概率', content:`<h4>概率定义</h4><div class="formula-box">P(A) = m/n (古典概型)，0 ≤ P(A) ≤ 1</div>
+<h4>加法公式</h4><div class="formula-box">P(A∪B) = P(A) + P(B) - P(A∩B)</div>
+<h4>乘法公式</h4><div class="formula-box">P(A∩B) = P(A)·P(B|A)</div>` },
+  '统计': { icon:'📊', desc:'平均数、方差、标准差', content:`<h4>平均数</h4><div class="formula-box">x̄ = (x₁+x₂+...+xₙ)/n</div>
+<h4>方差</h4><div class="formula-box">s² = Σ(xᵢ-x̄)² / n</div>
+<h4>标准差</h4><div class="formula-box">s = √s²</div>` },
+  '矩阵': { icon:'🧮', desc:'矩阵运算、行列式', content:`<h4>矩阵定义</h4><p>m×n 个数排成 m 行 n 列的数表</p>
+<h4>行列式</h4><div class="formula-box">二阶 |a b; c d| = ad-bc</div>
+<h4>矩阵乘法</h4><div class="formula-box">A(m×s)·B(s×n) = C(m×n)，Cᵢⱼ=Σₖ AᵢₖBₖⱼ</div>` },
+  '向量': { icon:'➡️', desc:'向量运算、数量积', content:`<h4>向量加减</h4><p>对应坐标相加减</p>
+<h4>数量积</h4><div class="formula-box">a·b = |a||b|cosθ = x₁x₂+y₁y₂</div>
+<h4>模长</h4><div class="formula-box">|a| = √(x²+y²)</div>` },
+  '数论': { icon:'🔢', desc:'整除、GCD、素数', content:`<h4>最大公约数 GCD</h4><p>辗转相除法：gcd(a,b) = gcd(b, a mod b)</p>
+<h4>最小公倍数 LCM</h4><div class="formula-box">lcm(a,b) = a×b / gcd(a,b)</div>
+<h4>素数</h4><p>大于1且只能被1和自身整除的数</p>
+<h4>质因数分解</h4><p>将合数表示为素数的乘积，如 12 = 2² × 3</div>` },
+  '指数与对数': { icon:'📈', desc:'指数函数、对数函数', content:`<h4>指数运算</h4><div class="formula-box">aᵐ·aⁿ = aᵐ⁺ⁿ；(aᵐ)ⁿ = aᵐⁿ；a⁻ⁿ = 1/aⁿ</div>
+<h4>对数定义</h4><div class="formula-box">若 aˣ = N (a>0,a≠1)，则 x = logₐN</div>
+<h4>对数性质</h4><div class="formula-box">logₐ(MN) = logₐM + logₐN<br>logₐ(M/N) = logₐM - logₐN<br>logₐMⁿ = n·logₐM</div>` },
+  '排列组合': { icon:'🎯', desc:'排列数、组合数', content:`<h4>排列</h4><div class="formula-box">Aₙᵐ = n!/(n-m)!</div>
+<h4>组合</h4><div class="formula-box">Cₙᵐ = n!/[m!(n-m)!]</div>
+<h4>二项式定理</h4><div class="formula-box">(a+b)ⁿ = Σ Cₙᵏ aⁿ⁻ᵏ bᵏ</div>` },
+  '复数': { icon:'🔮', desc:'虚数单位、复数运算', content:`<h4>虚数单位</h4><div class="formula-box">i² = -1</div>
+<h4>复数形式</h4><p>z = a + bi，a 为实部，b 为虚部</p>
+<h4>四则运算</h4><div class="formula-box">(a+bi)±(c+di) = (a±c)+(b±d)i<br>(a+bi)(c+di) = (ac-bd)+(ad+bc)i</div>` }
+};
+
+const grid = document.getElementById('topicGrid');
+Object.keys(knowledge).forEach(k => {
+  const card = document.createElement('div');
+  card.className = 'topic-card';
+  card.innerHTML = `<div class="icon">${knowledge[k].icon}</div><h4>${k}</h4><p>${knowledge[k].desc}</p>`;
+  card.addEventListener('click', () => {
+    const d = document.getElementById('knowledgeDetail');
+    d.innerHTML = `<h3>${k}</h3>${knowledge[k].content}`;
+    d.classList.add('show');
+    d.scrollIntoView({behavior:'smooth'});
+  });
+  grid.appendChild(card);
+});
+
+/* ========== 练习题库（60+题） ========== */
+const questionBank = [
+  // 代数
+  { cat:'代数', diff:'简单', q:'方程 2x + 6 = 0 的解是？', opts:['x = 3','x = -3','x = 2','x = -2'], ans:1, exp:'2x = -6，x = -3。' },
+  { cat:'代数', diff:'简单', q:'方程 x² - 9 = 0 的解是？', opts:['x = 3','x = ±3','x = -3','x = 9'], ans:1, exp:'x² = 9，x = ±3。' },
+  { cat:'代数', diff:'中等', q:'方程 x² - 5x + 6 = 0 的解是？', opts:['x=1,6','x=2,3','x=-2,-3','x=1,5'], ans:1, exp:'(x-2)(x-3)=0，x=2 或 3。' },
+  { cat:'代数', diff:'中等', q:'若 x + y = 5, x - y = 1，则 x = ?', opts:['2','3','4','1'], ans:1, exp:'两式相加 2x=6，x=3。' },
+  { cat:'代数', diff:'中等', q:'因式分解 x² - 4 = ?', opts:['(x-2)²','(x+2)²','(x-2)(x+2)','(x-4)(x+1)'], ans:2, exp:'平方差公式 a²-b²=(a+b)(a-b)。' },
+  { cat:'代数', diff:'困难', q:'若 x² + y² = 10, xy = 3，则 (x+y)² = ?', opts:['13','16','7','4'], ans:1, exp:'(x+y)² = x²+2xy+y² = 10+6 = 16。' },
+  { cat:'代数', diff:'简单', q:'3 + 4 × 2 = ?', opts:['14','11','10','12'], ans:1, exp:'先乘除后加减：4×2=8，3+8=11。' },
+  { cat:'代数', diff:'中等', q:'化简 (a+b)² - (a-b)² = ?', opts:['2ab','4ab','2a²','2b²'], ans:1, exp:'= (a²+2ab+b²)-(a²-2ab+b²) = 4ab。' },
+  { cat:'代数', diff:'简单', q:'-2 的绝对值是？', opts:['-2','2','0','1/2'], ans:1, exp:'|-2| = 2。' },
+  { cat:'代数', diff:'中等', q:'若 2ˣ = 8，则 x = ?', opts:['2','3','4','6'], ans:1, exp:'2³=8，x=3。' },
+  // 几何
+  { cat:'几何', diff:'简单', q:'半径为 3 的圆面积是？', opts:['6π','9π','3π','12π'], ans:1, exp:'S = πr² = π×9 = 9π。' },
+  { cat:'几何', diff:'简单', q:'半径为 5 的圆周长是？', opts:['5π','10π','25π','15π'], ans:1, exp:'C = 2πr = 10π。' },
+  { cat:'几何', diff:'简单', q:'直角三角形两直角边为 3 和 4，斜边长？', opts:['5','6','7','√7'], ans:0, exp:'c = √(9+16) = 5。' },
+  { cat:'几何', diff:'中等', q:'长 6 宽 4 的长方形面积是？', opts:['10','20','24','12'], ans:2, exp:'S = 6×4 = 24。' },
+  { cat:'几何', diff:'中等', q:'三角形三边长 3,4,5，面积是？', opts:['6','12','10','8'], ans:0, exp:'直角三角形，S = ½×3×4 = 6。' },
+  { cat:'几何', diff:'简单', q:'正方形边长为 5，面积是？', opts:['10','20','25','15'], ans:2, exp:'S = 5² = 25。' },
+  { cat:'几何', diff:'中等', q:'半径为 2 的球体积是？', opts:['(8/3)π','(32/3)π','4π','(16/3)π'], ans:1, exp:'V = (4/3)πr³ = (4/3)π×8 = (32/3)π。' },
+  { cat:'几何', diff:'中等', q:'半径为 1 的球表面积是？', opts:['4π','2π','π','8π'], ans:0, exp:'S = 4πr² = 4π。' },
+  { cat:'几何', diff:'困难', q:'点 (1,2) 到点 (4,6) 的距离是？', opts:['5','4','3','√5'], ans:0, exp:'d = √[(4-1)²+(6-2)²] = √(9+16) = 5。' },
+  { cat:'几何', diff:'简单', q:'三角形内角和是？', opts:['90°','180°','270°','360°'], ans:1, exp:'三角形内角和为 180°。' },
+  // 三角函数
+  { cat:'三角', diff:'简单', q:'sin 30° = ?', opts:['1/2','√3/2','√2/2','1'], ans:0, exp:'sin 30° = 1/2。' },
+  { cat:'三角', diff:'简单', q:'cos 60° = ?', opts:['1/2','√3/2','√2/2','1'], ans:0, exp:'cos 60° = 1/2。' },
+  { cat:'三角', diff:'简单', q:'sin 45° = ?', opts:['1/2','√3/2','√2/2','1'], ans:2, exp:'sin 45° = √2/2。' },
+  { cat:'三角', diff:'中等', q:'sin²30° + cos²30° = ?', opts:['1','1/2','√3/2','0'], ans:0, exp:'sin²θ+cos²θ = 1。' },
+  { cat:'三角', diff:'中等', q:'tan 45° = ?', opts:['0','1','√3','√3/3'], ans:1, exp:'tan 45° = sin45/cos45 = 1。' },
+  { cat:'三角', diff:'简单', q:'cos 90° = ?', opts:['1','0','-1','1/2'], ans:1, exp:'cos 90° = 0。' },
+  { cat:'三角', diff:'中等', q:'sin 90° = ?', opts:['0','1','-1','1/2'], ans:1, exp:'sin 90° = 1。' },
+  { cat:'三角', diff:'困难', q:'若 sin θ = 3/5，θ 为锐角，则 cos θ = ?', opts:['4/5','3/4','5/4','1'], ans:0, exp:'cos θ = √(1-9/25) = √(16/25) = 4/5。' },
+  // 微积分
+  { cat:'微积分', diff:'简单', q:'f(x) = x³ 的导数是？', opts:['3x²','x²','3x','x³/3'], ans:0, exp:'(x³)\' = 3x²。' },
+  { cat:'微积分', diff:'简单', q:'f(x) = x² 的导数是？', opts:['x','2x','x²','2'], ans:1, exp:'(x²)\' = 2x。' },
+  { cat:'微积分', diff:'中等', q:'f(x) = sin x 的导数是？', opts:['cos x','-cos x','-sin x','tan x'], ans:0, exp:'(sin x)\' = cos x。' },
+  { cat:'微积分', diff:'中等', q:'f(x) = eˣ 的导数是？', opts:['eˣ','xeˣ⁻¹','1','ln x'], ans:0, exp:'(eˣ)\' = eˣ。' },
+  { cat:'微积分', diff:'中等', q:'∫2x dx = ?', opts:['x²+C','2x²+C','x+C','2+C'], ans:0, exp:'∫2x dx = 2·(x²/2)+C = x²+C。' },
+  { cat:'微积分', diff:'中等', q:'∫x² dx = ?', opts:['x³+C','x³/3+C','2x+C','x²/2+C'], ans:1, exp:'∫x² dx = x³/3+C。' },
+  { cat:'微积分', diff:'困难', q:'f(x) = x³+2x 的导数是？', opts:['3x²+2','x²+2','3x²+1','3x+2'], ans:0, exp:'f\'(x) = 3x²+2。' },
+  { cat:'微积分', diff:'简单', q:'常数 C 的导数是？', opts:['C','1','0','Cx'], ans:2, exp:'常数的导数为 0。' },
+  // 概率统计
+  { cat:'概率统计', diff:'简单', q:'抛一枚硬币，正面朝上的概率是？', opts:['1/4','1/2','1/3','1'], ans:1, exp:'P = 1/2。' },
+  { cat:'概率统计', diff:'简单', q:'掷一个骰子，出现 6 点的概率是？', opts:['1/2','1/3','1/6','1'], ans:2, exp:'P = 1/6。' },
+  { cat:'概率统计', diff:'中等', q:'数据 2,4,6,8,10 的平均数是？', opts:['5','6','7','8'], ans:1, exp:'(2+4+6+8+10)/5 = 30/5 = 6。' },
+  { cat:'概率统计', diff:'中等', q:'若 P(A)=0.4, P(B)=0.3, A、B互斥，则 P(A∪B)=?', opts:['0.7','0.12','0.1','0.5'], ans:0, exp:'互斥时 P(A∪B)=P(A)+P(B)=0.7。' },
+  { cat:'概率统计', diff:'中等', q:'数据 1,2,3,4,5 的方差是？', opts:['2','3','4','5'], ans:0, exp:'平均数3，方差=[(1-3)²+(2-3)²+...+(5-3)²]/5 = 10/5 = 2。' },
+  { cat:'概率统计', diff:'困难', q:'从1到10中任取一个数，取到偶数的概率是？', opts:['1/2','2/5','3/5','1/5'], ans:0, exp:'偶数有2,4,6,8,10共5个，P=5/10=1/2。' },
+  { cat:'概率统计', diff:'简单', q:'必然事件的概率是？', opts:['0','1','0.5','0.1'], ans:1, exp:'必然事件概率为 1。' },
+  // 数列
+  { cat:'数列', diff:'简单', q:'等差数列 1,3,5,7,... 的公差是？', opts:['1','2','3','4'], ans:1, exp:'公差 d = 3-1 = 2。' },
+  { cat:'数列', diff:'中等', q:'等比数列 2,6,18,... 的公比是？', opts:['2','3','4','6'], ans:1, exp:'公比 q = 6/2 = 3。' },
+  { cat:'数列', diff:'中等', q:'从 1 到 100 的和是？', opts:['5000','5050','5100','4950'], ans:1, exp:'S = (1+100)×100/2 = 5050。' },
+  { cat:'数列', diff:'中等', q:'等差数列首项1，公差2，前10项和是？', opts:['100','110','105','95'], ans:0, exp:'S₁₀ = 10×1+10×9×2/2 = 10+90 = 100。' },
+  { cat:'数列', diff:'困难', q:'等比数列首项1，公比2，前5项和是？', opts:['31','32','16','15'], ans:0, exp:'S₅ = (1-2⁵)/(1-2) = 31。' },
+  { cat:'数列', diff:'简单', q:'数列 2,4,6,8,... 的第10项是？', opts:['18','20','22','10'], ans:1, exp:'a₁₀ = 2+9×2 = 20。' },
+  // 数论
+  { cat:'数论', diff:'简单', q:'12 和 18 的最大公约数是？', opts:['2','3','6','9'], ans:2, exp:'gcd(12,18)=6。' },
+  { cat:'数论', diff:'中等', q:'4 和 6 的最小公倍数是？', opts:['12','24','10','8'], ans:0, exp:'lcm(4,6)=12。' },
+  { cat:'数论', diff:'简单', q:'下列哪个是素数？', opts:['4','6','7','9'], ans:2, exp:'7 只能被 1 和 7 整除，是素数。' },
+  { cat:'数论', diff:'中等', q:'360 的质因数分解中 2 的指数是？', opts:['2','3','4','5'], ans:1, exp:'360 = 2³×3²×5，2 的指数为 3。' },
+  { cat:'数论', diff:'中等', q:'5! = ?', opts:['60','120','24','720'], ans:1, exp:'5! = 5×4×3×2×1 = 120。' },
+  { cat:'数论', diff:'困难', q:'1 到 100 中素数的个数是？', opts:['23','24','25','26'], ans:2, exp:'1到100中有 25 个素数。' },
+  { cat:'数论', diff:'简单', q:'0 和 1 中，哪个是素数？', opts:['0','1','都是','都不是'], ans:3, exp:'0和1都不是素数（素数定义从2开始）。' },
+  // 线性代数
+  { cat:'线性代数', diff:'中等', q:'矩阵 [[1,2],[3,4]] 的行列式是？', opts:['-2','2','10','-10'], ans:0, exp:'1×4-2×3 = -2。' },
+  { cat:'线性代数', diff:'中等', q:'矩阵 [[2,0],[0,3]] 的行列式是？', opts:['5','6','0','1'], ans:1, exp:'2×3-0×0 = 6。' },
+  { cat:'线性代数', diff:'简单', q:'单位矩阵的行列式是？', opts:['0','1','-1','随阶数变化'], ans:1, exp:'单位矩阵行列式为 1。' },
+  { cat:'线性代数', diff:'中等', q:'矩阵 [[1,2],[3,4]] 的转置是？', opts:['[[1,3],[2,4]]','[[1,2],[3,4]]','[[4,3],[2,1]]','[[2,1],[4,3]]'], ans:0, exp:'转置即行列互换。' },
+  { cat:'线性代数', diff:'困难', q:'三阶矩阵主对角线全为1其余为0，行列式是？', opts:['0','1','3','-1'], ans:1, exp:'单位矩阵行列式为1。' },
+  // 指数对数
+  { cat:'指数对数', diff:'简单', q:'2³ = ?', opts:['6','8','9','5'], ans:1, exp:'2³ = 8。' },
+  { cat:'指数对数', diff:'中等', q:'log₁₀ 1000 = ?', opts:['2','3','10','100'], ans:1, exp:'10³=1000，log₁₀1000=3。' },
+  { cat:'指数对数', diff:'中等', q:'ln e = ?', opts:['0','1','e','10'], ans:1, exp:'ln e = 1。' },
+  { cat:'指数对数', diff:'简单', q:'任何非零数的 0 次幂是？', opts:['0','1','该数','无意义'], ans:1, exp:'a⁰ = 1 (a≠0)。' },
+  { cat:'指数对数', diff:'困难', q:'若 log₂ x = 3，则 x = ?', opts:['6','8','9','23'], ans:1, exp:'x = 2³ = 8。' },
+  // 复数
+  { cat:'复数', diff:'简单', q:'i² = ?', opts:['1','-1','i','0'], ans:1, exp:'i² = -1。' },
+  { cat:'复数', diff:'中等', q:'(1+i)(1-i) = ?', opts:['0','2','1','1+i'], ans:1, exp:'= 1 - i² = 1-(-1) = 2。' },
+  { cat:'复数', diff:'中等', q:'复数 3+4i 的实部是？', opts:['3','4','3+4i','5'], ans:0, exp:'实部为 3。' }
+];
+
+// 填充分类选择
+const catSel = document.getElementById('catSel');
+const cats = [...new Set(questionBank.map(q=>q.cat))];
+cats.forEach(c => { const o = document.createElement('option'); o.value=c; o.textContent=c; catSel.appendChild(o); });
+
+let currentQuiz = [], quizScore = 0, quizTotal = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i=a.length-1; i>0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function buildQuiz() {
+  const cat = document.getElementById('catSel').value;
+  const diff = document.getElementById('diffSel').value;
+  const num = parseInt(document.getElementById('numSel').value);
+  let pool = questionBank.filter(q => (cat==='all'||q.cat===cat) && (diff==='all'||q.diff===diff));
+  if (pool.length === 0) { alert('该条件下无题，请调整筛选'); return; }
+  const pick = shuffle(pool).slice(0, Math.min(num, pool.length));
+  // 打乱每题选项
+  currentQuiz = pick.map(q => {
+    const idx = shuffle([0,1,2,3]);
+    const opts = idx.map(i => q.opts[i]);
+    const ans = idx.indexOf(q.ans);
+    return {...q, opts, ans};
+  });
+  quizScore = 0; quizTotal = currentQuiz.length;
+  document.getElementById('totalNum').textContent = quizTotal;
+  document.getElementById('scoreNum').textContent = 0;
+  document.getElementById('scoreFill').style.width = '0%';
+  document.getElementById('rateText').textContent = '正确率 0%';
+  renderQuiz();
+}
+
+function renderQuiz() {
+  const area = document.getElementById('quizArea');
+  area.innerHTML = '';
+  if (currentQuiz.length === 0) { area.innerHTML = '<p style="color:var(--muted);">点击"随机出题"开始练习</p>'; return; }
+  currentQuiz.forEach((quiz, idx) => {
+    const card = document.createElement('div');
+    card.className = 'quiz-card';
+    const optsHtml = quiz.opts.map((o,i) => `<div class="option" data-idx="${i}">${String.fromCharCode(65+i)}. ${o}</div>`).join('');
+    card.innerHTML = `<div class="quiz-q">${idx+1}. （${quiz.cat}·${quiz.diff}）${quiz.q}</div><div class="options">${optsHtml}</div><div class="feedback" id="fb-${idx}"></div>`;
+    area.appendChild(card);
+    card.querySelectorAll('.option').forEach(opt => {
+      opt.addEventListener('click', () => {
+        const chosen = parseInt(opt.dataset.idx);
+        const fb = document.getElementById('fb-' + idx);
+        if (fb.classList.contains('show')) return;
+        const correct = chosen === quiz.ans;
+        opt.classList.add(correct ? 'correct' : 'wrong');
+        if (!correct) card.querySelectorAll('.option')[quiz.ans].classList.add('correct');
+        fb.className = 'feedback show ' + (correct ? 'correct' : 'wrong');
+        fb.innerHTML = (correct ? '✅ 正确！' : '❌ 错误。') + ' 解析：' + quiz.exp;
+        stats.total++;
+        if (correct) stats.correct++;
+        else { if (!wrongList.some(w=>w.q===quiz.q)) wrongList.push({q:quiz.q, your:quiz.opts[chosen], right:quiz.opts[quiz.ans], exp:quiz.exp, cat:quiz.cat}); }
+        save(); updateStats(); renderWrong();
+        quizScore += correct ? 1 : 0;
+        document.getElementById('scoreNum').textContent = quizScore;
+        const rate = Math.round(quizScore/quizTotal*100);
+        document.getElementById('scoreFill').style.width = rate + '%';
+        document.getElementById('rateText').textContent = '正确率 ' + rate + '%';
+      });
+    });
+  });
+}
+
+document.getElementById('newQuiz').addEventListener('click', buildQuiz);
+renderQuiz();
+
+// 错题本
+function renderWrong() {
+  const area = document.getElementById('wrongArea');
+  if (wrongList.length === 0) { area.innerHTML = '<p style="color:var(--muted);">暂无错题，继续保持！</p>'; return; }
+  area.innerHTML = wrongList.map((w,i) => `
+    <div class="wrong-item">
+      <div class="q">${i+1}. （${w.cat}）${w.q}</div>
+      <div>你的答案：<span style="color:var(--danger);">${w.your}</span>　正确答案：<span style="color:var(--success);">${w.right}</span></div>
+      <div style="margin-top:4px;color:var(--muted);">解析：${w.exp}</div>
+    </div>`).join('') +
+    '<button class="btn secondary" onclick="localStorage.removeItem(\'mathmind_wrong\');wrongList=[];renderWrong();" style="margin-top:10px;">清空错题本</button>';
+}
+renderWrong();
+window.renderWrong = renderWrong;
+</script>
+</body>
+</html>
